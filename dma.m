@@ -129,7 +129,7 @@ h_a = r_a - (p.r / 1000);   %apoapsis altitude
 
 fprintf(['Apoapsis: %4.2f km\n' ...
     'Target: %4.2f km\n' ...
-    'Apoapsis Error: %4.2f km\n'],r_a, guid.h_tgt / 1000, dr_a);
+    'Apoapsis Error: %4.2f km\n'],h_a, guid.h_tgt / 1000, dr_a);
 
 plot(v,h)
 
