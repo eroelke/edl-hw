@@ -6,7 +6,7 @@
 %   veh: vehicle struct
 %   atm: atmospheric data
 % 
-function [xdot, rho] = eom_3dof(x, veh, p)
+function xdot = eom_3dof(x, veh, p)
 
 % extract params
 h = x(1); %altitude
