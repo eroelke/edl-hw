@@ -149,10 +149,10 @@ switch (planet)
         h0 = 150;
     case 'Earth'
         H = 8500;  %atm scale height, m
-        rP = 6378e3;  %radius, m
+        rP = 6.3568e6;  %radius, m
         mu = 3.9860e14; %gravitational param, m^3/s^2
-        rho0 = 1.225;  %surface density, kg/m3
-        g = 9.81;   %grav accel, m/s2
+        rho0 = 1.217;  %surface density, kg/m3
+        g = 9.798;   %grav accel, m/s2
         h0 = 125;
     case 'Mars'
         rP = 3.3962e6;
