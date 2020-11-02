@@ -2,9 +2,11 @@
 % Drag Modulated Aerocapture Code
 %  simplified, planar equations of motion
 clear;clc;
+addpath('util/');
+addpath('sej/');
 %% custom parameters
 % planet data
-[H, rP, mu, rho0, g, hatm] = get_planet_data('Earth');
+p = get_planet_data('Earth');
 
 % entry state
 vatm = 13;  %entry velocity, km/s
@@ -40,13 +42,7 @@ veh.m = mass;
 veh.cd = cD;
 veh.cl = cL;
 veh.aref = Aref;
-% atmosphere
-p.H = H;
-p.rho0 = rho0;
-p.r = rP;
-p.mu = mu;
-p.g = g;
-p.hatm = hatm;
+% planet
 p.hmin = hmin;
 % state
 gamma0 = efpa * pi/180;
