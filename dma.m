@@ -10,28 +10,28 @@ p = get_planet_data('Earth');
 
 % entry state
 vatm = 13;  %entry velocity, km/s
-efpa = 5.39;  % entry flight path angle, deg (+ below horizon for 3dof eqs)
+efpa = 5.6; % entry flight path angle, deg (+ below horizon for 3dof eqs)
 
 % vehicle
-beta = 200; % choose aref from beta and mass
-mass = 1000; %kg
-cD = 1.05; % drag coefficient
+beta = 80; % choose aref from beta and mass
+mass = 250; %kg
+cD = 1; % drag coefficient
 cL = 0; % lift coefficient
 Aref = mass / (cD * beta);
 
-b21 = 4;    %beta ratio
+b21 = 12;    %beta ratio
 cD_2 = cD;  %assume same cd
-mass_2 = 200;
+mass_2 = 75;
 beta_2 = b21 * beta;
 Aref_2 = mass_2 / (cD_2 * beta_2);
 
 % guidance
-g_rate = 0.5;   %guidance call rate, Hz
+g_rate = 1;   %guidance call rate, Hz
 ha_tgt = 42164;    %GEO cause why not, km
-tj0 = 100;  %s, initial guess
+tj0 = 70;  %s, initial guess
 
 % sim
-rate = 100;   %simulation integration rate, Hz
+rate = 1000;   %simulation integration rate, Hz
 t_max = 1000;    %maximum time, s
 t_init = 0; %initial time, s
 hmin = 25; %min altitude for termination, km
@@ -77,6 +77,7 @@ v(1) = vatm;
 fpa(1) = -efpa;
 t(1) = tvec(1);
 control_flag = false;
+fprintf('Running Drag Modulation Guidance...\n');
 for i = 2:length(x)
     % try to run guidance (if we haven't jettisoned)
     if (mod(i - 1, sg_ratio) == 0 && ~guid.jflag)
@@ -88,6 +89,7 @@ for i = 2:length(x)
     
     % check jettison
     if (tvec(i) >= guid.tj && ~guid.jflag)
+        tj_f = tvec(i);
         guid.jflag = true;
         veh.m = guid.m2;
         veh.cd = guid.cd2;
@@ -123,9 +125,7 @@ r_a = r_a / 1000;   %m -> km
 dr_a = dr_a / 1000; %m -> km
 h_a = r_a - (p.r / 1000);   %apoapsis altitude
 
-fprintf(['Apoapsis: %4.2f km\n' ...
-    'Target: %4.2f km\n' ...
-    'Apoapsis Error: %4.2f km\n'],h_a, guid.h_tgt / 1000, dr_a);
+fprintf('Apoapsis Error: %g km\nJett Time: %g s\n',dr_a, tj_f);
 
 plot(v,h)
 
