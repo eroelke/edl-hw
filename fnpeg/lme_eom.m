@@ -7,7 +7,7 @@ function dxdt = lme_eom(t, x, lRef, tRef, sigma0, sigmaF, direction, e0, eF, ...
 % extract state
 r = x(1:3);
 v = x(4:6);
-m = x(7);
+% m = x(7);
 
 rMag = norm(x(1:3));
 vMag = norm(x(4:6));

@@ -1,7 +1,7 @@
 %% store_dat.m
 %   store lift modulation simulation parameters
 % 
-function dat = store_dat(last, dat, iter, tCur, xDyn, bank, direction, eCur, deadband, guid)
+function dat = store_dat(last, dat, iter, tCur, xDyn, bank, direction, eCur, deadband, guid, azErr)
     dat.t(iter) = tCur;
     dat.r(iter) = xDyn.sph(1);
     dat.lon(iter) = xDyn.sph(2) * 180/pi;
@@ -10,6 +10,7 @@ function dat = store_dat(last, dat, iter, tCur, xDyn, bank, direction, eCur, dea
     dat.fpa(iter) = xDyn.sph(5) * 180/pi;
     dat.heading(iter) = xDyn.sph(6) * 180/pi;
     dat.s(iter) = xDyn.sph(7);
+    dat.azErr(iter) = azErr * 180/pi;
     
     if strcmpi(guid.phase,'entry') && ~last
         dat.e(iter) = eCur;

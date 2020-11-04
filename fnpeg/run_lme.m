@@ -29,6 +29,7 @@ prevDir = 1;
 % Initial bank angle command
 bank = guid.bankTrim * pi/180;
 direction = 1;
+azErr = nan;
 
 % Set bank profile
 bankProfile = guid.bankProfile;
@@ -52,6 +53,7 @@ dat.s = ldat1;
 dat.e = ldat1;
 dat.deadband = ldat1;
 dat.bank = ldat1;
+dat.azErr = ldat1;
 
 % Initialize exit criterion, step counter
 iter = 1;
@@ -74,8 +76,8 @@ while (~flag)
                 bank = guid.bankTrim * pi/180;
                 direction = 1;
                 bankProfile = 'constant';
-                deadband = guid.c1 * xDyn.sph(4)*vRef + guid.c0;
-                if (t >= 0.065)
+                deadband = guid.c1*xDyn.sph(4)*vRef + guid.c0;
+                if (t >= 0.05)
                     % Ensure correct bank profile
                     bankProfile = guid.bankProfile;
 
@@ -93,7 +95,7 @@ while (~flag)
                 bank = run_fnpeg(bankGuess, t, xDyn.sph, t + tF, lRef,...
                     tRef, planet, veh, guid);
                 % check bank reversal / deadband
-                [direction, deadband] = try_reversal(prevDir, xDyn.sph, vRef, guid);
+                [direction, deadband, azErr] = try_reversal(prevDir, xDyn.sph, vRef, guid);
                 bankProfile = guid.bankProfile; % save bank profile
                 bankGuess = bank;   %reset for next iter
                 prevDir = direction;   %reset for next iter
@@ -103,7 +105,7 @@ while (~flag)
         end %guidance
     end
     % Save output (last step = false)
-    dat = store_dat(false, dat, iter, t * tRef, xDyn, bank, direction, eCur, deadband, guid);
+    dat = store_dat(false, dat, iter, t * tRef, xDyn, bank, direction, eCur, deadband, guid, azErr);
     
     %% Propagate dynamics forward
     [ttCur, xxDyn, ~, ~, ie] = ode45(@(t, x) lme_eom(t, x, lRef, tRef, bank, ...
@@ -129,7 +131,7 @@ while (~flag)
 end
 
 % save last data point
-dat = store_dat(true, dat, iter, t * tRef, xDyn, bank, direction, eCur, deadband, guid);
+dat = store_dat(true, dat, iter, t * tRef, xDyn, bank, direction, eCur, deadband, guid, azErr);
 
 end %run_lme.m
 
