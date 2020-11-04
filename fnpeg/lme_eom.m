@@ -1,5 +1,3 @@
-function dxdt = EOM_unified(t, x, lRef, tRef, sigma0, sigmaF, direction, e0, eF, ...
-    bankProfile, a_Thrust, TMax, Isp, omega, planet, vehicle, guid, perts)
 %%EOM_UNIFIED Equations of motion in Cartesian coordinates for entry
 %%and powered descent with prescribed thrust vector and bank angle.
 % Compute the right-hand side of the equations of motion in Cartesian
@@ -44,17 +42,13 @@ function dxdt = EOM_unified(t, x, lRef, tRef, sigma0, sigmaF, direction, e0, eF,
 %     * perts, logical, = true if aero and fictitious accelerations are
 %     considered
 % 
-% AUTHOR:
-%    Davide Amato, CU Boulder, davide.amato@colorado.edu.
-%
-% REFERENCES:
-%    [1] P. Lu, â€œAugmented Apollo Powered Descent Guidance,â€?
-%        Journal of Guidance, Control, and Dynamics, vol. 42, no. 3, 
-%        pp. 447â€“457, 2019.
-%    [2] Amato, Davide. â€œWeekly reports for Fall 2019.â€? CU Boulder, 2019.
-%
-%% Unpack inputs
-r = x(1:3); v = x(4:6); m = x(7);
+function dxdt = lme_eom(t, x, lRef, tRef, sigma0, sigmaF, direction, e0, eF, ...
+    bankProfile, omega, planet, vehicle, guid, perts)
+
+% extract state
+r = x(1:3);
+v = x(4:6);
+m = x(7);
 
 rMag = norm(x(1:3));
 vMag = norm(x(4:6));
@@ -70,12 +64,9 @@ elseif (strcmpi(bankProfile, 'linear'))
 end
 
 sigma = direction * sigma;
-csig  = cos(sigma); ssig = sin(sigma);
-
-%% Get density and winds
 
 % Altitude and time (km, s)
-h_km = (rMag * lRef - planet.r)*1E-3;
+h_km = (rMag * lRef - planet.r) * 1E-3;
 t_sec = t * tRef;
 
 rho = atm_exponential(h_km, planet.rho0, 0, planet.H);
@@ -104,7 +95,7 @@ if vMag > 10*eps  % Neglect aerodynamics at very small velocity
     D_ms2 = (-0.5 * (rho/B) * vInfty_msMag) .* vInfty_ms;
 
     % Lift acceleration (m/s^2)
-    L_ms2 = vehicle.LD * norm(D_ms2) .* (csig .* xW - ssig .* zW);
+    L_ms2 = vehicle.LD * norm(D_ms2) .* (cos(sigma) .* xW - sin(sigma) .* zW);
 
     % Drag and lift acceleration and aerodynamic force (dimensionless)
     D = D_ms2 / (lRef / tRef^2);
@@ -112,19 +103,8 @@ if vMag > 10*eps  % Neglect aerodynamics at very small velocity
     f = D + L;
 
 end
-%% Thrust
 
-% Consider thrust saturation
-TMag = m * norm(a_Thrust);
-if TMag > TMax
-    TMag = TMax;
-    a_Thrust = TMag .* a_Thrust ./ norm(a_Thrust);
-    
-end
-
-%% Equations of motion
 dxdt = zeros(6,1);
-
 % Auxiliary quantities
 r3          = rMag^3;
 grav        = -r/r3;
@@ -137,11 +117,10 @@ if ~perts
     f = 0;
     coriolis = 0;
     centrifugal = 0;
-    
 end
 
 dxdt(1:3) = v;
-dxdt(4:6) = grav + a_Thrust + f + coriolis + centrifugal;
-dxdt(7)   = -TMag/Isp;
+dxdt(4:6) = grav + f + coriolis + centrifugal;  %F = ma
+dxdt(7) = 0;    %delta mass = 0
 
 end

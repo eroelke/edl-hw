@@ -1,5 +1,3 @@
-function [a,q,p,M] = measurements(t, x, lRef, tRef, sigma0, sigmaF, direction,...
-    e0, eF, bankProfile, a_Thrust, TMax, planet, vehicle, guid)
 %%%MEASUREMENTS Simulate perfect measurements of acceleration and air data
 % 
 % The acceleration measured by the vehicle is a_meas = f_aero +
@@ -17,9 +15,13 @@ function [a,q,p,M] = measurements(t, x, lRef, tRef, sigma0, sigmaF, direction,..
 % 
 % AUTHOR:
 %    Davide Amato, CU Boulder, davide.amato@colorado.edu.
-%
-%% Unpack inputs
-r = x(1:3)'; v = x(4:6)'; m = x(7);
+% 
+function [a,q,p,M] = measurements(t, x, lRef, tRef, sigma0, sigmaF, direction,...
+    e0, eF, bankProfile, planet, vehicle, guid)
+
+% get state
+r = x(1:3)';
+v = x(4:6)'; m = x(7);
 
 rMag = norm(x(1:3));
 vMag = norm(x(4:6));
@@ -38,21 +40,15 @@ sigma = direction * sigma;
 csig  = cos(sigma); ssig = sin(sigma);
 
 %% Get density and winds
-
-% Altitude and time (km, s)
-h_km = (rMag * lRef - planet.r)*1E-3;
-t_sec = t * tRef;
-
-rho = atm_exponential(h_km, planet.rho0, 0, planet.H);
+alt = (rMag * lRef - planet.r) / 1e3;
+rho = planet.rho0 * exp(-alt / planet.H);
 w = zeros(3,1);
 
 % Velocity wrt flow
 vInfty = v - w;
 
-%% Wind unit vectors
-f = zeros(3,1); vInfty_msMag = 0;
+f = zeros(3,1);
 if vMag > 10*eps  % Neglect aerodynamics at very small velocity
-    
     yW = vInfty ./ norm(vInfty);
     zW = cross(r,vInfty); zW = zW ./ norm(zW);
     xW = cross(yW, zW); % Check: norm(xW) = 1
@@ -75,22 +71,15 @@ if vMag > 10*eps  % Neglect aerodynamics at very small velocity
     D = D_ms2 / (lRef / tRef^2);
     L = L_ms2 / (lRef / tRef^2);
     f = D + L;
-
 end
 %% Thrust
-
-% Consider thrust saturation
-TMag = m * norm(a_Thrust);
-if TMag > TMax
-    TMag = TMax;
-    a_Thrust = TMag .* a_Thrust ./ norm(a_Thrust);
-    
-end
+a_Thrust = [0 0 0]';
 
 %% Generate measurements
 
 % Acceleration (m/s^2)
-a = (a_Thrust + f)'; a = a * (lRef/tRef^2);
+a = (a_Thrust + f)';
+a = a * (lRef/tRef^2);
 
 p = 0; q = 0; M = 0;
 end

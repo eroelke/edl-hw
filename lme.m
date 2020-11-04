@@ -12,6 +12,11 @@ planet = get_planet_data('Mars');
 lRef = planet.r;                             % (m)
 tRef = sqrt(lRef^3/planet.mu);               % (s)
 
+% settings
+s_tgt = 7.952;      % deg, range target
+h_tgt = 11e3;       % target altitude, m
+v_tgt = 1.2e3;      % target velocity, m/s
+
 %% Initial conditions at EI and vehicle parameters
 
 % Initial conditions in spherical coordinates
@@ -31,81 +36,52 @@ vehicle.A     = 200;                                    % m^2 (vehicle reference
 vehicle.LD    = 0.15;                                   % Lift-to-drag ratio
 vehicle.CD    = vehicle.m0 / (vehicle.B0 * vehicle.A);  % Drag coefficient
 vehicle.CL    = vehicle.CD * vehicle.LD;                % Lift coefficient
-vehicle.Isp   = 360;                                    % s (specific impulse)
-vehicle.TMax  = 800E3;                                  % Maximum thrust magnitude (N)
+% vehicle.TMax  = 800E3;                                  % Maximum thrust magnitude (N)
 vehicle.TMin  = 200E3;                                  % Minimum thrust magnitude (N)
 
 %% Guidance parameters
-s_tgt = 7.952;              % deg, range target
-
 % GENERAL GUIDANCE PARAMETERS
 guid.phase = 'ballistic';    % Initial guidance phase
 guid.bankTrim = 90;          % Trim bank angle (deg)
-guid.aStart = 0.15 * 9.807;  % Threshold acceleration to start guidance (m/s^2). Set = Inf to avoid starting guidance.
-
-% Density profile used by guidance
-% guid.densType = 'exp';                    % Density profile type: 'exp', 'GRAM', or 'predicted'
-% guid.atmo.h0 = 0;                               % Base altitude used in 'exp' profile (km)
-guid.atmo.rho0 = planet.rho0;                   % Base density used in 'exp' profile (kg/m^3)
-guid.atmo.scaleH = planet.H;               % Scale height used in 'exp' profile (km)
 
 % FNPEG targets
-guid.FNPEG.vT = 1214;                                       % FNPEG target velocity (m/s)
-guid.FNPEG.rT = planet.r + 11e3;                            % FNPEG target radius (m)
-guid.FNPEG.eT = planet.mu/guid.FNPEG.rT - ...               % FNPEG target negative energy (m^2/s^2)
-    0.5*guid.FNPEG.vT^2;    
-[guid.FNPEG.lonT, guid.FNPEG.latT] =...                     % FNPEG target longitude and latitude (deg)
-    track_greatCirc(ICs_sph.lon0,ICs_sph.lat0,s_tgt,ICs_sph.psi0);
+guid.vT = v_tgt;                                       % FNPEG target velocity (m/s)
+guid.rT = planet.r + h_tgt;                            % FNPEG target radius (m). 11 km altitude
+guid.eT = planet.mu/guid.rT - ...               % FNPEG target negative energy (m^2/s^2)
+    0.5*guid.vT^2;    
+% get target lat, lon from initial lat/lon, range target, and initial
+% azimuth
+[guid.lonT, guid.latT] = track_greatCirc(ICs_sph.lon0,ICs_sph.lat0,s_tgt,ICs_sph.psi0);
 % FNPEG settings
-guid.FNPEG.dpsi_i = 2;                                      % FNPEG lateral deadband initial width (deg)
-guid.FNPEG.dpsi_f = 1.5;                                    % FNPEG lateral deadband final width (deg)
-[guid.FNPEG.c0, guid.FNPEG.c1] = ...                        % FNPEG lateral deadband constants (deg, deg * s/m)
-    deadbConst([ICs_sph.v0, guid.FNPEG.dpsi_i],...
-    [guid.FNPEG.vT, guid.FNPEG.dpsi_f]);
-guid.FNPEG.bankProfile = 'linear';                          % FNPEG bank angle profile ('constant' or 'linear' with energy)
-guid.FNPEG.bank0 = 90 * pi/180;                             % FNPEG bank angle initial guess (rad)
-guid.FNPEG.sigmaF = 60 * pi/180;                            % FNPEG target bank angle for linear profile (rad)
-guid.FNPEG.GNTol  = 1e-4;                                   % FNPEG Gauss-Newton exit tolerance
-guid.FNPEG.tolInt = 1e-8;                                   % FNPEG predictor integration tolerance (should be several orders smaller than GNTol)
-guid.FNPEG.dt = 1;                                          % FNPEG time step
-
-%% Navigation parameters
-% Navigation biases and variances
-nav.enabled = false;                                        % = true to introduce errors, = false for perfect navigation
-nav.Rbias = 0;                                              % Navigation - position bias (m)
-nav.Vbias = 0;                                              % Navigation - velocity bias (m)
-nav.Rvar  = 0^2;                                            % Navigation - position variance (m^2)
-nav.Vvar  = 0^2;                                            % Navigation - velocity variance (m^2/s^2)
-nav.hLim  = 30;                                             % Navigation - threshold altitude for error nulling
+guid.dpsi_i = 2;        % FNPEG lateral deadband initial width (deg)
+guid.dpsi_f = 1.5;      % FNPEG lateral deadband final width (deg)
+% FNPEG lateral deadband constants (deg, deg * s/m)
+[guid.c0, guid.c1] = deadbConst([ICs_sph.v0, guid.dpsi_i], [guid.vT, guid.dpsi_f]);
+guid.bankProfile = 'linear';  % FNPEG bank angle profile ('constant' or 'linear' with energy)
+guid.bank0 = 90 * pi/180;     % FNPEG bank angle initial guess (rad)
+guid.sigmaF = 60 * pi/180;    % FNPEG target bank angle for linear profile (rad)
+guid.GNTol  = 1e-4;    % FNPEG Gauss-Newton exit tolerance
+guid.tolInt = 1e-8;    % FNPEG predictor integration tolerance (should be several orders smaller than GNTol)
+guid.dt = 1;           % FNPEG time step
 
 %% Integration settings for the dynamics
-integ.hF = 0;                                               % Minimum final altitude (m)
-integ.tF = 600;                                             % Max final time for the integration (s)
-integ.tol = 1e-9;                                           % EOM integration tolerance
-integ.perts = true;                                         % Perturbations switch for EOMs
-
-%% Load network for density predictions
-
-TMEP = struct;
-TMEP.alts = 5:2:80;
+integ.tF = 600;     % Max final time for the integration (s)
+integ.tol = 1e-9;	% integration tolerance
+integ.perts = true;	% Perturbations switch for EOMs
 
 
 %% Launch simulation loop and save to disk
 
 tic;
 fprintf('Running FNPEG Guidance...\n');
-[solution, controls, flag, events, navErrs, meas, atmo] =...
-    run_lme(ICs_sph, planet, vehicle, guid,...
-    nav, integ, lRef, tRef);
+dat = run_lme(ICs_sph, planet, vehicle, guid, integ, lRef, tRef);
 
-s = calc_range(ICs_sph.lat0, ICs_sph.lon0, solution.sph.lat(end), solution.sph.lon(end));
+s = calc_range(ICs_sph.lat0, ICs_sph.lon0, dat.lat(dat.idxend), dat.lon(dat.idxend));
 ds = s - s_tgt;
 
 elapsed = toc;
-fprintf(['Finished! Time elapsed: %g s.\n' ... 
-    'Range: %g deg\n' ... 
-    'Range Error: %g deg\n'],elapsed, s, ds);
-delete(gcp('nocreate'))
+fprintf('Range Error: %g deg\n', ds);
+% delete(gcp('nocreate'))
 
 
 %% Plots

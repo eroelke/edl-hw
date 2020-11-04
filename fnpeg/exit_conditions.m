@@ -27,7 +27,7 @@ mass = x(7);
 roots(1) = (rMag - planet.r / lRef) - hf;
 
 %% Condition 2: final energy
-e = -rv2energy(1, rMag, vMag);
+e = -rv2xi(1, rMag, vMag);
 roots(2) = ef - e;
 
 %% Condition 3: final time

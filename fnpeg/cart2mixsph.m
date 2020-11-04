@@ -23,16 +23,14 @@ function xSph = cart2mixsph(xCart)
 %    Davide Amato, CU Boulder, davide.amato@colorado.edu.
 %
 % REFERENCES:
-%    [1] Amato, Davide. “Fall 2019 individual report.” CU Boulder, Boulder,
+%    [1] Amato, Davide. “Fall 2019 individual report.�? CU Boulder, Boulder,
 %    CO. September 2019.
 % 
-%% Unpack vector
-
+%extract
 rx = xCart(:,1); ry = xCart(:,2); rz = xCart(:,3);
 vx = xCart(:,4); vy = xCart(:,5); vz = xCart(:,6);
 
 %% Radius, velocity, longitude, latitude
-
 r = zeros(size(xCart,1),1); v = zeros(size(xCart,1),1); 
 for i=1:size(xCart,1)
     r(i) = norm(xCart(i,1:3));
@@ -42,8 +40,7 @@ theta = atan2(ry, rx);
 phi = asin(rz ./ r);
 
 %% Velocity, heading, flight-path angle
-
-vE = -vx .* sin(theta)             + vy .* cos(theta)                             ;
+vE = -vx .* sin(theta)             + vy .* cos(theta);
 vN = -vx .* sin(phi) .* cos(theta) - vy .* sin(phi) .* sin(theta) + vz .* cos(phi);
 vR =  vx .* cos(phi) .* cos(theta) + vy .* cos(phi) .* sin(theta) + vz .* sin(phi);
 

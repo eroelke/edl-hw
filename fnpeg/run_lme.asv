@@ -45,10 +45,14 @@ direction = 1;
 % Set bank profile
 bankProfile = guid.bankProfile;
 
+% Set thrust = 0 during entry
+a_Thrust = zeros(3,1);
+
 % Normalize and initialize times and time steps
+t0 = 0;
 tF = integ.tF / tRef;
 dt = guid.dt/tRef;
-tCur = 0;
+tCur = t0;
 
 % Initialize outputs
 nMax = 1000;
@@ -62,9 +66,13 @@ dat.v = ldat1;
 dat.fpa = ldat1;
 dat.heading = ldat1;
 dat.s = ldat1;
-dat.e = ldat1;
-dat.deadband = ldat1;
-dat.bank = ldat1;
+
+% aux.cart  = zeros(nMax,8); aux.sph  = zeros(nMax,9);
+% aux.contr = zeros(nMax,11);
+% aux.nav   = zeros(nMax,7);
+% aux.meas  = zeros(nMax,7);
+% aux.atmo  = zeros(nMax,5);
+% aux.pred  = cell(nMax,1);
 
 % Initialize exit criterion, step counter
 iter = 1;
@@ -74,6 +82,9 @@ done = false;
 % Integration options
 opts = odeset('RelTol', integ.tol, 'AbsTol', integ.tol, ...
     'Events', @(t,x) exit_conditions(t, x, lRef, tRef, 0, eF, mDry, planet, integ));
+
+% Events
+% events = struct();
 
 %% Run Simulation Loop
 while (~done)
@@ -118,7 +129,7 @@ while (~done)
             bank = run_fnpeg(bankGuess, tCur, xNav.sph, tCur + tF, lRef,...
                 tRef, planet, veh, guid);
             % check bank reversal / deadband
-            [direction, deadband] = try_reversal(prevDir, xNav.sph, vRef, guid);
+            [direction, course, azOff, deadband] = try_reversal(prevDir, xNav.sph, vRef, guid);
             % save bank profile
             bankProfile = guid.bankProfile;
             % Reset guesses for next iteration
@@ -130,11 +141,15 @@ while (~done)
                 mDry, planet, integ));            
     end    
     % Save output (last step = false)
-    dat = store_dat(false, dat, iter, tCur, xDyn, bank, direction, eCur, deadband, guid);
+    dat = store_dat(false, dat, iter, tCur, xDyn, lRef, tRef, bank, ...
+    direction, eCur, eF, bankProfile, course, azOff, deadband, ...
+    a_Thrust, planet, veh, guid);
+
+    %% DYNAMICS
     
-    %% Propagate dynamics forward
+    % Propagate dynamics forward (Cartesian equations)
     [ttCur, xxDyn, ~, ~, ie] = ode45(...
-    @(t, x) lme_eom(t, x, lRef, tRef, bank, ...
+    @(t, x) EOM_unified(t, x, lRef, tRef, bank, ...
     guid.sigmaF, direction, eCur, eF, bankProfile,...
     omega, planet, veh, guid, integ.perts), [tCur, tCur + dt], ...
         xDyn.cart, opts);
@@ -158,7 +173,61 @@ while (~done)
 end
 
 % save last data point
-dat = store_dat(true, dat, iter, tCur, xDyn, bank, direction, eCur, deadband, guid);
+
+% Save output (last step = true)
+dat = store_dat(true, dat, iter, tCur, xDyn, lRef, tRef, bank, ...
+    direction, eCur, eF, bankProfile, course, azOff, deadband, ...
+    a_Thrust, planet, veh, guid);
+
+%% FORMAT OUTPUT
+%certesian
+% aux2 = aux.cart(1:iter,:);
+% dat.cart = array2table([aux2(:,1) .* tRef, aux2(:,2:4) .* lRef,...
+%     aux2(:,5:7) .* vRef, aux2(:,8) .* veh.m0]);
+% 
+% % Mixed-spherical trajectory
+% aux3 = aux.sph(1:iter,:);
+% dat.sph = array2table([aux3(:,1) .* tRef, aux3(:,2) .* lRef,...
+%     aux3(:,3:4) .* 180/pi, aux3(:,5) .* vRef, aux3(:,6:7) .* 180/pi, ...
+%     aux3(:,8) .* planet.r * 1e-3, aux3(:,8) .* veh.m0]);
+% 
+% % Control history
+% aux4 = aux.contr(1:iter,:);
+% dat.controls = array2table([aux4(:,1) .* tRef, aux4(:,2), aux4(:,3:6).*180/pi,...
+%     aux4(:,7).*veh.m0.*gRef, aux4(:,8).*veh.m0.*gRef, aux4(:,9:11)]);
 
 end %run_lme.m
 
+
+function dat = store_dat(last, dat, iter, tCur, xDyn, bank, direction, eCur, course, azOff, deadband, guid)
+    %%%store_dat Save output variables into 'aux' structure. Called at
+    %%%each timestep.
+    %
+    % INPUTS:
+    %   * last, logical, flag indicating whether this is the last step.
+    %
+    
+    dat.t(iter) = tCur;
+    dat.m(iter) = xDyn.sph(8);
+    dat.r(iter) = xDyn.sph(1);
+    dat.lon(iter) = xDyn.sph(2) * 180/pi;
+    dat.lat(iter) = xDyn.sph(3) * 180/pi;
+    dat.v(iter) = xDyn.sph(4);
+    dat.fpa(iter) = xDyn.sph(5) * 180/pi;
+    dat.heading(iter) = xDyn.sph(6) * 180/pi;
+    dat.s(iter) = xDyn.sph(7);
+    
+    if strcmpi(guid.phase,'entry') && ~last
+        dat.e(iter) = eCur;
+        dat.bank(iter) = direction * bank;
+        
+        dat.contr(iter,:) = [tCur, eCur, direction*bank, course*pi/180, azOff*pi/180,...
+            deadband*pi/180, TMag_cmd, TMag_eff, zeros(1,3)];
+    else
+        dat.contr(iter,:) = zeros(11,1);
+    end
+    
+    if (last)
+        dat.idxend = iter;
+    end
+end
