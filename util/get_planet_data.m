@@ -3,7 +3,7 @@ function planet = get_planet_data(name)
 switch (name)
     case 'Earth'
         planet.H = 8500;  %atm scale height, m
-        planet.r = 6.3568e6;  %radius, m
+        planet.r = 6.3710e6;  %radius, m
         planet.mu = 3.9860e14; %gravitational param, m^3/s^2
         planet.rho0 = 1.217;  %surface density, kg/m3
         planet.g = 9.798;   %grav accel, m/s2
