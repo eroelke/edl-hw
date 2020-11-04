@@ -3,7 +3,6 @@
 % 
 function dat = store_dat(last, dat, iter, tCur, xDyn, bank, direction, eCur, deadband, guid)
     dat.t(iter) = tCur;
-    dat.m(iter) = xDyn.sph(8);
     dat.r(iter) = xDyn.sph(1);
     dat.lon(iter) = xDyn.sph(2) * 180/pi;
     dat.lat(iter) = xDyn.sph(3) * 180/pi;
@@ -14,8 +13,8 @@ function dat = store_dat(last, dat, iter, tCur, xDyn, bank, direction, eCur, dea
     
     if strcmpi(guid.phase,'entry') && ~last
         dat.e(iter) = eCur;
-        dat.bank(iter) = direction * bank;
-        dat.deadband(iter) = deadband * 180/pi;
+        dat.bank(iter) = direction * bank * 180/pi;
+        dat.deadband(iter) = deadband;
     end
     
     if (last)

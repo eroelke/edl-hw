@@ -11,12 +11,12 @@ switch (name)
     case 'Mars'
         planet.mu   = 4.305E13;                      % m^3/s^-2 (gravitational parameter)
         planet.r    = 3397.2E3;                      % m (mean radius)
-        planet.TRot = 1.02595675;                    % day (rotation period)
-        planet.Om   = 360 / (planet.TRot * 86400);   % deg/s (angular velocity)
+%         planet.TRot = 1.02595675;                    % day (rotation period)
+%         planet.Om   = 360 / (planet.TRot * 86400);   % deg/s (angular velocity)
         planet.g    = planet.mu / planet.r^2;        % m/s^2 (surface acceleration)
         planet.gammaR = 1.2 * 191;                   % J/(kg K) (specific heat ratio * gas constant)
         planet.rho0 = 0.0263;
-        planet.H = 10.1536;
+        planet.H = 10.1536e3;
         planet.hatm = 100;  %altitude of atmospheric interface
     otherwise
         error('Bad Planet');

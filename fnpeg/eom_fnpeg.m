@@ -28,7 +28,7 @@ dens = planet.rho0 * exp(-alt / planet.H);
 v_ms = v * lRef / tRef;
 
 % Dimensional drag and lift acceleration magnitudes (m/s^2)
-D_ms2 = 0.5 * dens * v_ms.^2 / vehicle.B0;
+D_ms2 = 0.5 * dens * v_ms.^2 / vehicle.beta;
 L_ms2 = vehicle.LD * D_ms2;
 
 % Non-dimensionalize accelerations
