@@ -22,8 +22,10 @@ function [c0, c1] = deadbConst(constr_i, constr_f)
 %    20190702: Function created.
 
 %% Unpack
-v_i = constr_i(1); delta_i = constr_i(2);
-v_f = constr_f(1); delta_f = constr_f(2);
+v_i = constr_i(1);
+delta_i = constr_i(2);
+v_f = constr_f(1);
+delta_f = constr_f(2);
 
 %% c0, c1
 c0 = (delta_i * v_f - delta_f * v_i) / ( v_f - v_i);

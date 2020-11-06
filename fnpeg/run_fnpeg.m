@@ -18,15 +18,15 @@ opts = odeset('AbsTol',tolInt,'RelTol',tolInt,'Events',@(t, xSph) final_energy(t
 % First iteration. Propagate trajectory once and compute error function
 [~, xxSph] = ode45(@(t, xSph) eom_fnpeg(t, xSph, sigmaCur, eCur,...
     sigmaF, eF, lRef, tRef, planet, vehicle, guid), [t0 tF], xCurSph, opts);
-check_eF(xxSph(end,1),xxSph(end,4))
-z1 = xxSph(end,7);
-f1 = 0.5 * z1^2;
+% check_eF(xxSph(end,1),xxSph(end,4))
+z1 = xxSph(end,7);  %range, s1
+f1 = 0.5 * z1^2;    %f(s1) = s1^2/2;
 
 % Perturb initial \sigma_0 to compute finite difference
 [~, xxSph] = ode45(@(t, xSph) eom_fnpeg(t, xSph, sigmaCur + epsSigma, eCur,...
     sigmaF, eF, lRef, tRef, planet, vehicle, guid), [t0 tF], xCurSph, opts);
-check_eF(xxSph(end,1),xxSph(end,4))
-z1Pert = xxSph(end,7);
+% check_eF(xxSph(end,1),xxSph(end,4))
+z1Pert = xxSph(end,7); %range, sPert
 dzds = (z1Pert - z1) / epsSigma;
 
 % If dz/ds = 0, we're likely close to the end of entry and we can assume
@@ -49,12 +49,14 @@ f = f1;
 %% Gauss-Newton iterations
 while(~exitFlag && iter <= iter_max)
     % Save past values of bank angle, residual, error function
-    sigmaPastIter = sigmaCur; zPastIter = z; fPastIter = f;
+    sigmaPastIter = sigmaCur;
+    zPastIter = z;
+    fPastIter = f;
     
     % Initialize step size, inner counter
     lambda = 1;
     j = 1;
-    while ((j == 1 || f > fPastIter) && j <= 10)
+%     while ((j == 1 || f > fPastIter) && j <= 10)
         % Compute value of the current bank angle using eq. (25). The sign of
         % sigma should be decided by the bank angle logic.
         sigmaCur = sigmaCur - lambda * z / dzds;
@@ -63,7 +65,7 @@ while(~exitFlag && iter <= iter_max)
         % Compute residual, error function, dzds
         [~, xxSph] = ode45(@(t, xSph) eom_fnpeg(t, xSph, sigmaCur, eCur,...
             sigmaF, eF, lRef, tRef, planet, vehicle, guid), [t0 tF], xCurSph, opts);
-        check_eF(xxSph(end,1),xxSph(end,4))
+%         check_eF(xxSph(end,1),xxSph(end,4))
         z = xxSph(end,7);
         f = 0.5 * z^2;
         dzds = (z - zPastIter) / (sigmaCur - sigmaPastIter);
@@ -71,8 +73,7 @@ while(~exitFlag && iter <= iter_max)
         % Reduce step-size and increase counter
         lambda = 0.5 * lambda;
         j = j + 1;
-        
-    end
+%     end
     exitFlag = abs(z * dzds) <= epsExit;    %exit conditions
     iter = iter + 1;    %increment loop counter
 end

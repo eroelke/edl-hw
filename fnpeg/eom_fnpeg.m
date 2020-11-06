@@ -48,6 +48,6 @@ csig = cos(sigma);
 dxdt(4) = -D - sin(gamma)/r^2;
 
 % d(gamma)/dt
-dxdt(5) = ( L * csig + ( v^2 - 1/r ) * ( cos(gamma) / r ) ) / v;
+dxdt(5) = (L*csig + (v^2 - 1/r)*(cos(gamma) / r)) / v;
 
 end

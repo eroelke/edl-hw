@@ -76,7 +76,7 @@ while (~flag)
                 bank = guid.bankTrim * pi/180;
                 direction = 1;
                 bankProfile = 'constant';
-                deadband = guid.c1*xDyn.sph(4)*vRef + guid.c0;
+                deadband = guid.c1 * xDyn.sph(4) * vRef + guid.c0;
                 if (t >= 0.05)
                     % Ensure correct bank profile
                     bankProfile = guid.bankProfile;

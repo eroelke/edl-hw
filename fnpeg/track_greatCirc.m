@@ -9,17 +9,20 @@
 %   s: great circle angle, deg (aka range)
 %   psi: azimuth, deg
 % Outputs:
-%   lambda: latitude of final point
-%   phi:    longitude of final point
+%   lambda: longitude of final point
+%   phi:    latitude of final point
+% 
 function [lambda, phi] = track_greatCirc(long0, lat0, s, az)
-%% Store trig functions
+% put vars on the stack
+sphi0 = sind(lat0);
+cphi0 = cosd(lat0);
+ss = sind(s);
+cs = cosd(s);
+spsi = sind(az);
+cpsi = cosd(az);
 
-sphi0 = sind(lat0); cphi0 = cosd(lat0);
-ss = sind(s); cs = cosd(s);
-spsi = sind(az); cpsi = cosd(az);
-
-%% Latitude, longitude
-phi = 90 - acosd(sphi0*cs + cphi0*ss*cpsi);
-lambda = long0 + atan2d(ss*spsi, cphi0*cs - sphi0*ss*cpsi);
+% compute return vals
+lambda = long0 + atan2d(ss*spsi, cphi0*cs - sphi0*ss*cpsi); %longitude
+phi = 90 - acosd(sphi0*cs + cphi0*ss*cpsi); %latitude
 
 end
